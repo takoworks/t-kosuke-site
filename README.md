@@ -1,43 +1,24 @@
-# Astro Starter Kit: Minimal
+# シンプル静的サイト
 
-```sh
-npm create astro@latest -- --template minimal
-```
+Astro を取り除き、`public/` 配下の静的ファイルだけで構成した極小サイトです。
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+## ディレクトリ
 
 ```text
 /
 ├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── favicon.ico
+│   ├── favicon.svg
+│   └── index.html
+└── README.md
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+## 表示方法
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+1. `public/index.html` をブラウザで直接開く。
+2. もしくは任意の静的ファイルサーバーで公開する。
+   - 例: `cd public && python3 -m http.server 8080`
 
-Any static assets, like images, can be placed in the `public/` directory.
+## デプロイ
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+`public` ディレクトリの中身をそのままホスティングサービスにアップロードしてください。ビルドや依存パッケージは不要です。
