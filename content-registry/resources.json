@@ -275,6 +275,30 @@
       "url": "https://t-kosuke.com/r/qEkt2XXXFvxY/",
       "created": "2026-09-26",
       "status": "published"
+    },
+    "nXaP9tr5quVo": {
+      "type": "image",
+      "title": "9F8E2CC4 5788 4CEE A683 104722871E93",
+      "sourceName": "9F8E2CC4-5788-4CEE-A683-104722871E93.jpg",
+      "sourceSha256": "2ad2b6ee0bc9325577ebc51c83059c852025f4e4930c48bb3215223913185e10",
+      "target": "public/media/a18e6addc1508ff1fdc579bc2b29197c.webp",
+      "variants": [
+        {
+          "width": 960,
+          "height": 720,
+          "format": "webp",
+          "file": "public/media/3d54d0f5fd95cf545f2a4761e1dc1dd3.webp"
+        },
+        {
+          "width": 1448,
+          "height": 1086,
+          "format": "webp",
+          "file": "public/media/a18e6addc1508ff1fdc579bc2b29197c.webp"
+        }
+      ],
+      "url": "https://t-kosuke.com/r/nXaP9tr5quVo/",
+      "created": "2026-09-26",
+      "status": "published"
     }
   }
 }
