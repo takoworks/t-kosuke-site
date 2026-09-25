@@ -15,7 +15,22 @@
       "type": "image",
       "title": "ZINE連携画像",
       "sourceName": "IMG_3942.JPG",
-      "target": "public/media/4cb4d5feba1ea1de0d1c3413683427b3.jpg",
+      "target": "public/media/591191405db8c532eaca73e1b2f112d1.webp",
+      "original": "public/media/4cb4d5feba1ea1de0d1c3413683427b3.jpg",
+      "variants": [
+        {
+          "width": 960,
+          "height": 720,
+          "format": "webp",
+          "file": "public/media/1c213b0f5d435b0c02ef8304de11a98d.webp"
+        },
+        {
+          "width": 1600,
+          "height": 1200,
+          "format": "webp",
+          "file": "public/media/591191405db8c532eaca73e1b2f112d1.webp"
+        }
+      ],
       "url": "https://t-kosuke.com/r/XAPahVzJj3P4/",
       "created": "2026-09-26",
       "status": "published"
