@@ -15,6 +15,7 @@
       "type": "image",
       "title": "ZINE連携画像",
       "sourceName": "IMG_3942.JPG",
+      "sourceSha256": "58b2096d14cdba806669df8525a8328e1e4542b3f75df396a704e5a3603c4b08",
       "target": "public/media/591191405db8c532eaca73e1b2f112d1.webp",
       "original": "public/media/4cb4d5feba1ea1de0d1c3413683427b3.jpg",
       "variants": [

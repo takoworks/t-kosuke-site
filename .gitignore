@@ -25,3 +25,9 @@ pnpm-debug.log*
 
 # local agent config
 AGENT.md
+
+# local ZINE registration tool
+.zine-tool/
+.zine-register-*/
+登録待ち/*
+!登録待ち/README.txt
