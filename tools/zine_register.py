@@ -17,7 +17,7 @@ import urllib.request
 
 from PIL import Image, ImageOps
 import qrcode
-from qrcode.constants import ERROR_CORRECT_H
+from qrcode.constants import ERROR_CORRECT_M
 from qrcode.image.svg import SvgPathImage
 import zxingcpp
 
@@ -541,7 +541,7 @@ def viewer_html(title: str, variants: list[dict]) -> str:
 
 def make_qr(url: str, box_size: int) -> qrcode.QRCode:
     qr = qrcode.QRCode(
-        error_correction=ERROR_CORRECT_H,
+        error_correction=ERROR_CORRECT_M,
         box_size=box_size,
         border=4,
     )
