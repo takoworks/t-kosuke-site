@@ -28,6 +28,7 @@ REGISTRY_PATH = ROOT / "content-registry" / "resources.json"
 PUBLIC_MEDIA = ROOT / "public" / "media"
 PUBLIC_ROUTES = ROOT / "public" / "r"
 QR_DIR = ROOT / "qr-codes"
+CATALOG_PATH = ROOT / "QRコード一覧.html"
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 PUBLIC_ID_ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 VARIANT_WIDTHS = (960, 1600)
@@ -59,6 +60,250 @@ def write_registry(registry: dict) -> None:
         encoding="utf-8",
     )
     os.replace(temporary, REGISTRY_PATH)
+
+
+def catalog_html(registry: dict) -> str:
+    type_labels = {
+        "image": "画像",
+        "html": "HTML",
+        "video": "動画",
+        "audio": "音声",
+        "pdf": "PDF",
+    }
+    resources = sorted(
+        registry.get("resources", {}).items(),
+        key=lambda item: (item[1].get("created", ""), item[0]),
+        reverse=True,
+    )
+    cards: list[str] = []
+    for public_id, resource in resources:
+        resource_type = str(resource.get("type", "other"))
+        type_label = type_labels.get(resource_type, resource_type.upper())
+        title = str(resource.get("title", public_id))
+        created = str(resource.get("created", ""))
+        url = str(resource.get("url", ""))
+        qr_base = f"{public_id}-{resource_type}"
+        escaped_title = html.escape(title, quote=True)
+        escaped_url = html.escape(url, quote=True)
+        cards.append(
+            f'''    <article class="card" data-title="{escaped_title}" data-id="{public_id}" data-type="{resource_type}" data-created="{created}">
+      <a class="qr-link" href="qr-codes/{qr_base}.png" target="_blank">
+        <img class="qr" src="qr-codes/{qr_base}.png" alt="{escaped_title}のQRコード" loading="lazy">
+      </a>
+      <div class="content">
+        <div class="meta"><span>{html.escape(type_label)}</span><time datetime="{created}">{created}</time></div>
+        <h2>{escaped_title}</h2>
+        <p class="id">ID: {public_id}</p>
+        <p class="url">{escaped_url}</p>
+        <div class="actions">
+          <a class="primary" href="{escaped_url}" target="_blank" rel="noopener noreferrer">公開ページを開く</a>
+          <button type="button" data-copy="{escaped_url}">URLをコピー</button>
+          <a href="qr-codes/{qr_base}.png" target="_blank">PNG</a>
+          <a href="qr-codes/{qr_base}.svg" target="_blank">SVG</a>
+        </div>
+      </div>
+    </article>'''
+        )
+
+    card_markup = "\n".join(cards)
+    total = len(resources)
+    return f'''<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>発行済みQRコード一覧</title>
+  <style>
+    :root {{
+      color-scheme: light;
+      --paper: #f4f3ef;
+      --surface: #ffffff;
+      --ink: #1c211e;
+      --subtle: #66706a;
+      --line: #d6dcd8;
+      --accent: #17634c;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif;
+      line-height: 1.5;
+    }}
+    header {{
+      padding: 32px max(20px, calc((100vw - 1180px) / 2));
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+    }}
+    h1 {{ margin: 0 0 6px; font-size: clamp(24px, 4vw, 36px); }}
+    header p {{ margin: 0; color: var(--subtle); }}
+    .controls {{
+      max-width: 1180px;
+      margin: 24px auto 0;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto auto;
+      gap: 10px;
+    }}
+    input, select {{
+      width: 100%;
+      min-height: 44px;
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+    }}
+    .summary {{
+      max-width: 1180px;
+      margin: 14px auto;
+      padding: 0 20px;
+      color: var(--subtle);
+      font-size: 14px;
+    }}
+    .grid {{
+      max-width: 1180px;
+      margin: 0 auto 48px;
+      padding: 0 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }}
+    .card {{
+      display: grid;
+      grid-template-columns: 148px minmax(0, 1fr);
+      gap: 16px;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }}
+    .card[hidden] {{ display: none; }}
+    .qr-link {{ align-self: start; }}
+    .qr {{ display: block; width: 100%; height: auto; aspect-ratio: 1; }}
+    .content {{ min-width: 0; }}
+    .meta {{ display: flex; justify-content: space-between; gap: 12px; color: var(--subtle); font-size: 12px; }}
+    h2 {{ margin: 8px 0 3px; font-size: 17px; line-height: 1.35; }}
+    .id {{ margin: 0; color: var(--subtle); font: 12px ui-monospace, monospace; }}
+    .url {{ margin: 10px 0; overflow-wrap: anywhere; font: 12px ui-monospace, monospace; }}
+    .actions {{ display: flex; flex-wrap: wrap; gap: 6px; }}
+    .actions a, .actions button {{
+      min-height: 34px;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--surface);
+      color: var(--ink);
+      font: inherit;
+      font-size: 12px;
+      text-decoration: none;
+      cursor: pointer;
+    }}
+    .actions .primary {{ background: var(--accent); border-color: var(--accent); color: white; }}
+    .empty {{ display: none; max-width: 1180px; margin: 30px auto; padding: 0 20px; color: var(--subtle); }}
+    @media (max-width: 720px) {{
+      .controls {{ grid-template-columns: 1fr; }}
+      .card {{ grid-template-columns: 112px minmax(0, 1fr); }}
+    }}
+    @media (max-width: 440px) {{
+      .card {{ grid-template-columns: 1fr; }}
+      .qr-link {{ width: min(240px, 100%); justify-self: center; }}
+    }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>発行済みQRコード一覧</h1>
+    <p>このファイルは管理用です。公開サイトには配置されません。</p>
+  </header>
+  <section class="controls" aria-label="絞り込みと並べ替え">
+    <input id="search" type="search" placeholder="タイトルまたはIDで検索" aria-label="検索">
+    <select id="type" aria-label="種類">
+      <option value="">すべての種類</option>
+      <option value="image">画像</option>
+      <option value="html">HTML</option>
+      <option value="video">動画</option>
+      <option value="audio">音声</option>
+      <option value="pdf">PDF</option>
+    </select>
+    <select id="sort" aria-label="並べ替え">
+      <option value="newest">新しい順</option>
+      <option value="oldest">古い順</option>
+      <option value="title">タイトル順</option>
+    </select>
+  </section>
+  <p class="summary"><span id="visible-count">{total}</span> / {total}件を表示</p>
+  <main id="grid" class="grid">
+{card_markup}
+  </main>
+  <p id="empty" class="empty">条件に合うQRコードはありません。</p>
+  <script>
+    const grid = document.getElementById("grid");
+    const cards = Array.from(grid.querySelectorAll(".card"));
+    const search = document.getElementById("search");
+    const type = document.getElementById("type");
+    const sort = document.getElementById("sort");
+    const visibleCount = document.getElementById("visible-count");
+    const empty = document.getElementById("empty");
+
+    function refresh() {{
+      const query = search.value.trim().toLocaleLowerCase("ja");
+      const selectedType = type.value;
+      const ordered = [...cards].sort((a, b) => {{
+        if (sort.value === "oldest") return a.dataset.created.localeCompare(b.dataset.created);
+        if (sort.value === "title") return a.dataset.title.localeCompare(b.dataset.title, "ja");
+        return b.dataset.created.localeCompare(a.dataset.created);
+      }});
+      let count = 0;
+      ordered.forEach((card) => {{
+        const text = `${{card.dataset.title}} ${{card.dataset.id}}`.toLocaleLowerCase("ja");
+        const visible = (!query || text.includes(query)) && (!selectedType || card.dataset.type === selectedType);
+        card.hidden = !visible;
+        if (visible) count += 1;
+        grid.appendChild(card);
+      }});
+      visibleCount.textContent = count;
+      empty.style.display = count ? "none" : "block";
+    }}
+
+    async function copyUrl(button) {{
+      const value = button.dataset.copy;
+      try {{
+        await navigator.clipboard.writeText(value);
+      }} catch (_) {{
+        const field = document.createElement("textarea");
+        field.value = value;
+        document.body.appendChild(field);
+        field.select();
+        document.execCommand("copy");
+        field.remove();
+      }}
+      const original = button.textContent;
+      button.textContent = "コピーしました";
+      setTimeout(() => {{ button.textContent = original; }}, 1400);
+    }}
+
+    grid.addEventListener("click", (event) => {{
+      const button = event.target.closest("button[data-copy]");
+      if (button) copyUrl(button);
+    }});
+    search.addEventListener("input", refresh);
+    type.addEventListener("change", refresh);
+    sort.addEventListener("change", refresh);
+    refresh();
+  </script>
+</body>
+</html>
+'''
+
+
+def write_catalog(registry: dict) -> None:
+    temporary = CATALOG_PATH.with_suffix(".html.tmp")
+    temporary.write_text(catalog_html(registry), encoding="utf-8")
+    os.replace(temporary, CATALOG_PATH)
 
 
 def git(*arguments: str, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -387,9 +632,9 @@ def wait_for_publication(resource: dict, timeout_seconds: int = 60) -> bool:
     return False
 
 
-def open_qr_folder() -> None:
+def open_catalog() -> None:
     if sys.platform == "win32":
-        os.startfile(QR_DIR)  # type: ignore[attr-defined]
+        os.startfile(CATALOG_PATH)  # type: ignore[attr-defined]
 
 
 def register_images(assume_yes: bool = False) -> int:
@@ -461,6 +706,7 @@ def register_images(assume_yes: bool = False) -> int:
 
         publish_staging(staging, generated_paths)
         write_registry(registry)
+        write_catalog(registry)
     finally:
         shutil.rmtree(staging, ignore_errors=True)
 
@@ -470,7 +716,7 @@ def register_images(assume_yes: bool = False) -> int:
     if all(publication_results):
         message = (
             f"{len(added_resources)}件を公開しました。\n\n{urls}\n\n"
-            "QRコードのフォルダを開きます。"
+            "QRコード一覧を開きます。"
         )
     else:
         message = (
@@ -478,7 +724,7 @@ def register_images(assume_yes: bool = False) -> int:
             "公開側の反映確認が時間内に終わりませんでした。少し待ってからURLを確認してください。"
         )
     show_message("showinfo", "ZINEコンテンツ登録 完了", message)
-    open_qr_folder()
+    open_catalog()
     return 0
 
 
@@ -511,6 +757,11 @@ def self_test() -> int:
             len(Image.open(path).getexif()) == 0
             for path in (work / "public" / "media").glob("*.webp")
         )
+        registry["resources"][public_id] = resource
+        catalog = catalog_html(registry)
+        assert "発行済みQRコード一覧" in catalog
+        assert resource["url"] in catalog
+        assert f"qr-codes/{public_id}-image.png" in catalog
     print("Self-test passed")
     return 0
 
@@ -519,9 +770,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="ZINE連携画像の登録ツール")
     parser.add_argument("--yes", action="store_true", help="確認画面を省略する")
     parser.add_argument("--self-test", action="store_true", help="自己診断を実行する")
+    parser.add_argument(
+        "--build-catalog", action="store_true", help="QRコード一覧HTMLを更新する"
+    )
     arguments = parser.parse_args()
     if arguments.self_test:
         return self_test()
+    if arguments.build_catalog:
+        write_catalog(load_registry())
+        print(f"Catalog updated: {CATALOG_PATH}")
+        return 0
     try:
         return register_images(assume_yes=arguments.yes)
     except RegistrationError as exc:
