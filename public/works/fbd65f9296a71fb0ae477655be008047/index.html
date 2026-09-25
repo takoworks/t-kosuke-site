@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="ja">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>水滴ユニット型ペンドック — パラメトリック検討</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ECEFEC;
+  --paper-2:#F6F8F6;
+  --ink:#1C231F;
+  --ink-2:#4E5B54;
+  --ink-3:#8A968F;
+  --hair:#C4CEC8;
+  --hair-2:#DCE3DF;
+  --shu:#B4451F;
+  --moss:#1D6B4F;
+  --amber:#8A5A0B;
+  --mono:"IBM Plex Mono","SFMono-Regular",Menlo,monospace;
+  --sans:"IBM Plex Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:14px;
+  line-height:1.6;
+  background-image:
+    linear-gradient(to right,var(--hair-2) 1px,transparent 1px),
+    linear-gradient(to bottom,var(--hair-2) 1px,transparent 1px);
+  background-size:5mm 5mm;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:28px 20px 64px}
+
+header{border-bottom:1px solid var(--ink);padding-bottom:10px;margin-bottom:22px;
+  display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-family:var(--sans);font-size:19px;font-weight:500;margin:0;letter-spacing:.01em}
+.rev{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.08em}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 296px;gap:20px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+
+.view{background:var(--paper-2);border:1px solid var(--hair);position:relative}
+.view-head{display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  padding:8px 12px;border-bottom:1px solid var(--hair);font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.stage{display:grid;grid-template-columns:minmax(0,1fr) 168px}
+@media(max-width:620px){.stage{grid-template-columns:minmax(0,1fr)}}
+#cv{display:block;width:100%;height:460px;touch-action:none;cursor:grab}
+#cv:active{cursor:grabbing}
+.gauge{border-left:1px solid var(--hair);background:var(--paper-2)}
+@media(max-width:620px){.gauge{border-left:0;border-top:1px solid var(--hair)}}
+
+.panel{background:var(--paper-2);border:1px solid var(--hair)}
+.panel h2{font-size:11px;font-family:var(--mono);letter-spacing:.1em;font-weight:500;
+  margin:0;padding:8px 12px;border-bottom:1px solid var(--hair);color:var(--ink-2)}
+.panel .body{padding:12px}
+
+.ctl{margin-bottom:13px}
+.ctl:last-child{margin-bottom:2px}
+.ctl .lab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:3px}
+.ctl .name{font-size:12.5px}
+.ctl .sym{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);margin-left:5px}
+.ctl .val{font-family:var(--mono);font-size:13px;font-weight:500;
+  border-bottom:1px solid var(--shu);color:var(--shu);padding:0 1px}
+input[type=range]{width:100%;margin:0;height:18px;-webkit-appearance:none;appearance:none;background:transparent}
+input[type=range]:focus-visible{outline:2px solid var(--shu);outline-offset:3px}
+input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--ink-3)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;margin-top:-6px;
+  background:var(--paper-2);border:1.5px solid var(--ink);border-radius:0;transform:rotate(45deg)}
+input[type=range]::-moz-range-track{height:1px;background:var(--ink-3)}
+input[type=range]::-moz-range-thumb{width:11px;height:11px;background:var(--paper-2);
+  border:1.5px solid var(--ink);border-radius:0}
+
+.seg{display:flex;gap:0;border:1px solid var(--ink-3)}
+.seg button{flex:1;font-family:var(--mono);font-size:11.5px;padding:5px 0;background:transparent;
+  border:0;border-right:1px solid var(--hair);color:var(--ink-2);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper-2)}
+.seg button:focus-visible{outline:2px solid var(--shu);outline-offset:1px}
+
+.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;margin:7px 0;cursor:pointer}
+.chk input{accent-color:var(--shu);margin:0}
+
+.out{border-top:1px solid var(--hair);margin-top:4px}
+.out dl{display:grid;grid-template-columns:1fr auto;gap:0 10px;margin:0;padding:10px 12px 2px}
+.out dt{font-size:12px;color:var(--ink-2);padding:2.5px 0}
+.out dd{font-family:var(--mono);font-size:12.5px;margin:0;padding:2.5px 0;text-align:right;white-space:nowrap}
+.out dd b{font-weight:500}
+.warn{margin:0 12px 10px;padding:6px 8px;border-left:2px solid var(--shu);
+  font-size:11.5px;color:var(--shu);background:#F7EDE9}
+.warn:empty{display:none}
+
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:2px}
+caption{text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-2);padding:8px 12px;border-bottom:1px solid var(--hair)}
+th,td{padding:6px 8px;border-bottom:1px solid var(--hair-2);text-align:right;white-space:nowrap}
+th{font-weight:500;font-size:11px;color:var(--ink-3);font-family:var(--mono);letter-spacing:.02em}
+th:first-child,td:first-child{text-align:left}
+td.num{font-family:var(--mono)}
+tr.me td{background:#F0F3F0}
+.tag{font-family:var(--mono);font-size:11px;padding:1px 5px;border:1px solid currentColor}
+.t-ok{color:var(--moss)}.t-warn{color:var(--amber)}.t-ng{color:var(--shu)}
+
+.notes{margin-top:22px;border-top:1px solid var(--ink);padding-top:12px;
+  columns:2;column-gap:28px;font-size:12.5px;color:var(--ink-2)}
+@media(max-width:760px){.notes{columns:1}}
+.notes p{margin:0 0 9px;break-inside:avoid}
+.notes b{color:var(--ink);font-weight:500}
+code{font-family:var(--mono);font-size:11.5px;background:#E2E7E3;padding:0 3px}
+.fallback{padding:40px 16px;text-align:center;color:var(--shu);font-size:13px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header>
+  <h1>水滴ユニット型ペンドック — 保持機能のパラメトリック検討</h1>
+  <span class="rev">TAKOWORK / STUDY</span>
+</header>
+
+<div class="grid">
+  <div>
+    <div class="view">
+      <div class="view-head">
+        <span>ドラッグ＝回転／ホイール＝ズーム</span>
+        <label class="chk"><input type="checkbox" id="cutToggle"> 対角断面</label>
+        <label class="chk"><input type="checkbox" id="tiltToggle"> 傾き最大で表示</label>
+        <span style="margin-left:auto" id="hint"></span>
+      </div>
+      <div class="stage">
+        <canvas id="cv" aria-label="ペンドックの3Dプレビュー"></canvas>
+        <div class="gauge"><svg id="gauge" width="100%" height="460" viewBox="0 0 168 460" role="img" aria-labelledby="gt"><title id="gt">机面からの高さと各ペンの先端クリアランス</title></svg></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px">
+      <table>
+        <caption>PEN CHECK — 軸寸法は仮定値。実測して置き換えてください</caption>
+        <thead><tr><th>ペン</th><th>軸径</th><th>鼻先長</th><th>着座高さ</th><th>先端クリア</th><th>傾き</th><th>判定</th></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="notes">
+      <p><b>抽出したパラメータ</b>　保持を決めるのは、ポケットの隙間径 <code>P(y) = p√2 − 2r(y)</code> の高さ方向プロファイルだけです。水滴形の輪郭 <code>r(y)</code> を作る値のうち、保持に効くのは 5 つ（ピッチ・胴部最大径・円筒帯長さ・円錐半角・胴部の床からの高さ）。肉厚は保持に無関係なので中実で表示しています。</p>
+      <p><b>スロート径</b>　<code>p√2 − D</code>。ここが下限で、これ以下の軸は素通りして机に落ちます。ピッチと胴部径の差分でしか作れないので、この 2 つは独立に動かせません。</p>
+      <p><b>先端クリアランス</b>　ペン先から「スロート径と同じ太さになる断面」までの距離を <code>L</code> とすると、先端の高さは <code>胴部下端 + 円筒帯 − L</code>。円筒帯を伸ばすか、脚を足すか、底球の切り落としを深くするかの 3 通りで稼げます。</p>
+      <p><b>傾き</b>　接触点より上下の隙間を距離で割った最小値。単調な円錐だけなら円錐半角そのままですが、円筒帯を伸ばすと鼻先が深く入り、そこで角度が拘束されます。円筒帯が先端クリアランスと直立性の両方に効く唯一のパラメータです。</p>
+      <p><b>見ていないこと</b>　重量・重心・転倒、肉厚と溶着強度、三角軸やローレット軸などの非円形断面、ラバーグリップの弾性。断面表示は中実断面なので裏面が見えます。</p>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>UNIT — 水滴形の輪郭</h2>
+      <div class="body" id="unitCtl"></div>
+      <div class="out">
+        <dl id="outUnit"></dl>
+        <div class="warn" id="warnUnit"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>ARRAY — 配列</h2>
+      <div class="body">
+        <div class="ctl"><div class="lab"><span class="name">1辺の個数<span class="sym">n</span></span></div>
+          <div class="seg" id="nSeg"></div></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <h2>PEN — 検討用の1本</h2>
+      <div class="body">
+        <div class="seg" id="modeSeg" style="margin-bottom:12px">
+          <button data-mode="preset" aria-pressed="true">プリセット配置</button>
+          <button data-mode="custom" aria-pressed="false">カスタム1本</button>
+        </div>
+        <div id="penCtl"></div>
+      </div>
+      <div class="out"><dl id="outPen"></dl></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+var P = { p:16.5, D:17.5, ell:7.5, alpha:9.2, cut:8.0, ped:0.0, rTip:1.75, n:3 };
+var PEN = { d:10.5, nose:26 };
+var mode = "preset", showCut = false, showTilt = false;
+
+var PRESETS = [
+  { name:"油性ボールペン",   d:10.5, nose:26 },
+  { name:"鉛筆（削り済）",   d:7.8,  nose:14 },
+  { name:"製図用シャープ",   d:9.5,  nose:30 },
+  { name:"筆ペン",           d:12.0, nose:35 },
+  { name:"コピックチャオ",   d:15.5, nose:12 }
+];
+
+var UNIT_CTL = [
+  { k:"p",     name:"ピッチ",         sym:"p",  min:10, max:34, step:0.1, unit:"mm" },
+  { k:"D",     name:"胴部最大径",     sym:"D",  min:8,  max:30, step:0.1, unit:"mm" },
+  { k:"ell",   name:"円筒帯の長さ",   sym:"ℓ",  min:0,  max:40, step:0.5, unit:"mm" },
+  { k:"alpha", name:"円錐半角",       sym:"α",  min:3,  max:20, step:0.1, unit:"°"  },
+  { k:"cut",   name:"底球の切り落とし", sym:"c",min:0,  max:15, step:0.1, unit:"mm" },
+  { k:"ped",   name:"脚の高さ",       sym:"h",  min:0,  max:40, step:0.5, unit:"mm" },
+  { k:"rTip",  name:"先端R",          sym:"rt", min:0.3,max:4,  step:0.05,unit:"mm" }
+];
+
+/* ---------- geometry model ---------- */
+function derive(){
+  var R = P.D/2;
+  var a = P.alpha*Math.PI/180;
+  var cut = Math.min(P.cut, R);
+  var rTip = Math.min(P.rTip, R*Math.cos(a)*0.96);
+  var yEq = P.ped + cut;
+  var yTop = yEq + P.ell;                       // top of the parallel throat band
+  var apex = yTop + R/Math.tan(a);
+  var tipC = apex - rTip/Math.sin(a);
+  var tipTop = tipC + rTip;
+  var yTan = tipC + rTip*Math.sin(a);
+  var rTan = rTip*Math.cos(a);
+  return { R:R, a:a, cut:cut, rTip:rTip, rBot:Math.sqrt(Math.max(R*R-cut*cut,0)),
+           yEq:yEq, yTop:yTop, tipC:tipC, tipTop:tipTop, yTan:yTan, rTan:rTan,
+           dThroat:P.p*Math.SQRT2 - P.D, sideGap:P.p - P.D };
+}
+
+function radiusAt(y,g){
+  if(y<=0 || y>=g.tipTop) return 0;
+  if(y<=P.ped) return g.rBot;
+  if(y<=g.yEq){ var dy=g.yEq-y; return Math.sqrt(Math.max(g.R*g.R-dy*dy,0)); }
+  if(y<=g.yTop) return g.R;
+  if(y<=g.yTan) return g.R - Math.tan(g.a)*(y-g.yTop);
+  var dz=y-g.tipC; return Math.sqrt(Math.max(g.rTip*g.rTip-dz*dz,0));
+}
+function pocketAt(y,g){ return P.p*Math.SQRT2 - 2*radiusAt(y,g); }
+
+// minimum height at which a section of diameter `dia` can sit
+function requiredY(dia,g){
+  if(dia<=g.dThroat) return -Infinity;
+  var pMaxTan = P.p*Math.SQRT2 - 2*g.rTan;
+  if(dia<=pMaxTan) return g.yTop + (dia-g.dThroat)/(2*Math.tan(g.a));
+  var full = P.p*Math.SQRT2;
+  if(dia<=full){
+    var h=(full-dia)/2;
+    return g.tipC + Math.sqrt(Math.max(g.rTip*g.rTip-h*h,0));
+  }
+  return g.tipTop;
+}
+
+function penDia(s,pen){ return s<=0?0 : pen.d*Math.min(s/pen.nose,1); }
+
+function solve(pen,g){
+  var L=160, step=0.25, best=-Infinity, bestS=0, any=false;
+  for(var s=step;s<=L;s+=step){
+    var d=penDia(s,pen);
+    if(d<=g.dThroat) continue;
+    any=true;
+    var need=requiredY(d,g)-s;
+    if(need>best){ best=need; bestS=s; }
+  }
+  var res={ tip:0, contact:0, tilt:0, flag:"" };
+  if(!any){ res.flag="fall"; return res; }
+  if(pen.d > P.p*Math.SQRT2){ res.flag="toobig"; }
+  res.tipRaw=best;
+  res.tip=Math.max(best,0);
+  res.contact=best+bestS;
+  // tilt allowance: min clearance / lever arm, above and below the contact section
+  var t=res.tip, tilt=Infinity;
+  for(var s2=step;s2<=L;s2+=step){
+    if(Math.abs(s2-bestS)<0.6) continue;
+    var y=t+s2; if(y<=0||y>=g.tipTop) continue;
+    var cl=(pocketAt(y,g)-penDia(s2,pen))/2;
+    if(cl<0) continue;
+    var r=cl/Math.abs(s2-bestS);
+    if(r<tilt) tilt=r;
+  }
+  res.tilt = isFinite(tilt)? Math.atan(tilt)*180/Math.PI : 0;
+  if(res.flag==="") {
+    if(best<0) res.flag="desk";
+    else if(res.contact>g.tipTop-4) res.flag="ontop";
+    else if(best<2) res.flag="tight";
+    else res.flag="ok";
+  }
+  return res;
+}
+
+var FLAG={ ok:["保持","t-ok"], tight:["余裕不足","t-warn"], desk:["机に接触","t-ng"],
+           fall:["落下","t-ng"], ontop:["上に乗るだけ","t-ng"], toobig:["入らない","t-ng"] };
+
+/* ---------- three.js ---------- */
+var scene,cam,renderer,unitGeo,unitMat,penMatBody,penMatTip,units=[],pens=[],clip,ok3d=true;
+var az=0.72, pol=1.16, dist=205, userZoomed=false, target=new THREE.Vector3(0,24,0);
+var cv=document.getElementById("cv");
+
+function init3d(){
+  if(typeof THREE==="undefined"){ ok3d=false;
+    cv.outerHTML='<div class="fallback">3Dプレビューを読み込めませんでした。数値とゲージは下と右で確認できます。</div>';
+    return; }
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  renderer.localClippingEnabled=true;
+  scene=new THREE.Scene();
+  cam=new THREE.PerspectiveCamera(34,1,1,3000);
+  scene.add(new THREE.HemisphereLight(0xffffff,0xB9C4BD,0.85));
+  var d1=new THREE.DirectionalLight(0xffffff,0.62); d1.position.set(-90,150,110); scene.add(d1);
+  var d2=new THREE.DirectionalLight(0xffffff,0.24); d2.position.set(120,60,-90); scene.add(d2);
+
+  clip=new THREE.Plane(new THREE.Vector3(1,0,-1).normalize(),0);
+  unitMat=new THREE.MeshStandardMaterial({color:0xE4E0D5,roughness:0.62,metalness:0.02,side:THREE.DoubleSide});
+  penMatBody=new THREE.MeshStandardMaterial({color:0x46524A,roughness:0.5,side:THREE.DoubleSide});
+  penMatTip=new THREE.MeshStandardMaterial({color:0xB4451F,roughness:0.45,side:THREE.DoubleSide});
+
+  var grid=new THREE.GridHelper(300,60,0xA9B5AE,0xD3DAD5);
+  grid.position.y=-0.05; scene.add(grid);
+
+  bindOrbit();
+  resize(); window.addEventListener("resize",resize);
+  (function loop(){ requestAnimationFrame(loop); if(renderer) renderer.render(scene,cam); })();
+}
+function resize(){
+  if(!ok3d) return;
+  var w=cv.clientWidth||600, h=cv.clientHeight||460;
+  renderer.setSize(w,h,false); cam.aspect=w/h; cam.updateProjectionMatrix(); place();
+}
+function place(){
+  var x=Math.sin(pol)*Math.sin(az), y=Math.cos(pol), z=Math.sin(pol)*Math.cos(az);
+  cam.position.set(target.x+dist*x,target.y+dist*y,target.z+dist*z);
+  cam.lookAt(target);
+}
+function bindOrbit(){
+  var drag=false,lx=0,ly=0,pinch=0;
+  cv.addEventListener("pointerdown",function(e){drag=true;lx=e.clientX;ly=e.clientY;cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener("pointermove",function(e){
+    if(!drag)return;
+    az-=(e.clientX-lx)*0.008; pol-=(e.clientY-ly)*0.006;
+    pol=Math.max(0.12,Math.min(1.52,pol)); lx=e.clientX; ly=e.clientY; place();
+  });
+  cv.addEventListener("pointerup",function(e){drag=false;try{cv.releasePointerCapture(e.pointerId);}catch(_){}}); 
+  cv.addEventListener("wheel",function(e){e.preventDefault(); userZoomed=true;
+    dist=Math.max(60,Math.min(600,dist*(1+e.deltaY*0.0012))); place();},{passive:false});
+  cv.addEventListener("touchmove",function(e){
+    if(e.touches.length!==2)return; e.preventDefault();
+    var dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY;
+    var dd=Math.hypot(dx,dy);
+    if(pinch) { userZoomed=true; dist=Math.max(60,Math.min(600,dist*pinch/dd)); place(); }
+    pinch=dd;
+  },{passive:false});
+  cv.addEventListener("touchend",function(){pinch=0;});
+}
+
+function unitProfile(g){
+  var pts=[],i,y;
+  pts.push(new THREE.Vector2(0.001,0));
+  pts.push(new THREE.Vector2(Math.max(g.rBot,0.002),0));
+  if(P.ped>0) pts.push(new THREE.Vector2(Math.max(g.rBot,0.002),P.ped));
+  var N=26;
+  if(g.cut>0.02) for(i=1;i<=N;i++){ y=P.ped+g.cut*i/N; pts.push(new THREE.Vector2(Math.max(radiusAt(y,g),0.002),y)); }
+  else pts.push(new THREE.Vector2(g.R,g.yEq));
+  if(P.ell>0) pts.push(new THREE.Vector2(g.R,g.yTop));
+  var M=34;
+  for(i=1;i<=M;i++){ y=g.yTop+(g.yTan-g.yTop)*i/M; pts.push(new THREE.Vector2(Math.max(radiusAt(y,g),0.002),y)); }
+  var K=12;
+  for(i=1;i<=K;i++){ y=g.yTan+(g.tipTop-g.yTan)*i/K; pts.push(new THREE.Vector2(Math.max(radiusAt(y,g),0.0015),y)); }
+  pts.push(new THREE.Vector2(0.001,g.tipTop));
+  return pts;
+}
+
+function buildPenMesh(pen,res,g,dir){
+  var grp=new THREE.Group();
+  var LEN=142, pts=[];
+  pts.push(new THREE.Vector2(0.001,0));
+  var N=8,i;
+  for(i=1;i<=N;i++){ var s=pen.nose*i/N; pts.push(new THREE.Vector2(Math.max(penDia(s,pen)/2,0.002),s)); }
+  pts.push(new THREE.Vector2(pen.d/2,LEN-2));
+  pts.push(new THREE.Vector2(pen.d/2*0.82,LEN));
+  pts.push(new THREE.Vector2(0.001,LEN));
+  var geo=new THREE.LatheGeometry(pts,40);
+  var body=new THREE.Mesh(geo,penMatBody); grp.add(body);
+  var tip=new THREE.Mesh(new THREE.SphereGeometry(0.85,14,10),penMatTip);
+  tip.position.y=0.4; grp.add(tip);
+  if(showTilt && res.tilt>0.05){
+    var pivot=new THREE.Group();
+    grp.position.y=-res.contact+res.tip;
+    pivot.add(grp);
+    pivot.rotation.z=-dir.x*res.tilt*Math.PI/180;
+    pivot.rotation.x= dir.z*res.tilt*Math.PI/180;
+    var outer=new THREE.Group(); outer.add(pivot); outer.position.y=res.contact;
+    return outer;
+  }
+  grp.position.y=res.tip;
+  return grp;
+}
+
+function rebuild3d(g,results){
+  if(!ok3d) return;
+  var i;
+  for(i=0;i<units.length;i++) scene.remove(units[i]);
+  for(i=0;i<pens.length;i++) scene.remove(pens[i]);
+  units=[]; pens=[];
+  if(unitGeo) unitGeo.dispose();
+  unitGeo=new THREE.LatheGeometry(unitProfile(g),56);
+  [unitMat,penMatBody,penMatTip].forEach(function(m){
+    m.clippingPlanes = showCut?[clip]:null; m.needsUpdate=true;
+  });
+
+  var off=(P.n-1)/2, ix,iz;
+  for(ix=0;ix<P.n;ix++) for(iz=0;iz<P.n;iz++){
+    var m=new THREE.Mesh(unitGeo,unitMat);
+    m.position.set((ix-off)*P.p,0,(iz-off)*P.p);
+    scene.add(m); units.push(m);
+  }
+  var pk=[], po=(P.n-2)/2;
+  for(ix=0;ix<P.n-1;ix++) for(iz=0;iz<P.n-1;iz++) pk.push([(ix-po)*P.p,(iz-po)*P.p]);
+  pk.sort(function(a,b){ return Math.abs(a[0]-a[1])-Math.abs(b[0]-b[1]); });
+  for(i=0;i<pk.length;i++){
+    var pen = mode==="custom"? PEN : PRESETS[i%PRESETS.length];
+    var res = mode==="custom"? results.custom : results.preset[i%PRESETS.length];
+    if(res.flag==="fall") continue;
+    var len=Math.hypot(pk[i][0],pk[i][1])||1;
+    var dir={x:pk[i][0]/len,z:pk[i][1]/len};
+    var mesh=buildPenMesh(pen,res,g,dir);
+    mesh.position.x+=pk[i][0]; mesh.position.z+=pk[i][1];
+    scene.add(mesh); pens.push(mesh);
+  }
+  target.set(0,Math.min(g.tipTop*0.5,70),0);
+  if(!userZoomed) dist=Math.max(g.tipTop*2.1,(P.n-1)*P.p*2.4,120);
+  place();
+}
+
+/* ---------- gauge ---------- */
+function drawGauge(g,results){
+  var W=168,H=460,x0=44,top=26,bot=H-30;
+  var span=Math.max(g.tipTop,40)*1.04;
+  function Y(v){ return bot-(v/span)*(bot-top); }
+  var s='';
+  s+='<line x1="'+x0+'" y1="'+top+'" x2="'+x0+'" y2="'+bot+'" stroke="#8A968F" stroke-width="0.7"/>';
+  s+='<line x1="18" y1="'+bot+'" x2="150" y2="'+bot+'" stroke="#1C231F" stroke-width="1.1"/>';
+  s+='<text x="18" y="'+(bot+13)+'" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="#8A968F">DESK 0</text>';
+
+  var marks=[[g.yEq,"胴部下端"],[g.yTop,"スロート上端"],[g.tipTop,"全高"]];
+  if(P.ped>0) marks.unshift([P.ped,"脚上端"]);
+  for(var i=0;i<marks.length;i++){
+    var y=Y(marks[i][0]);
+    s+='<line x1="'+(x0-7)+'" y1="'+y+'" x2="150" y2="'+y+'" stroke="#C4CEC8" stroke-width="0.7" stroke-dasharray="3 3"/>';
+    s+='<text x="150" y="'+(y-3)+'" text-anchor="end" font-size="9.5" fill="#4E5B54" font-family="IBM Plex Sans,sans-serif">'+marks[i][1]+'</text>';
+    s+='<text x="150" y="'+(y+9.5)+'" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="10" fill="#1C231F">'+marks[i][0].toFixed(1)+'</text>';
+  }
+
+  var list=[];
+  if(mode==="custom") list.push({n:"カスタム",r:results.custom});
+  else for(i=0;i<PRESETS.length;i++) list.push({n:PRESETS[i].name,r:results.preset[i]});
+  list.sort(function(a,b){return a.r.tip-b.r.tip;});
+  var lastLab=1e9;
+  for(i=0;i<list.length;i++){
+    var r=list[i].r, v=r.flag==="fall"?0:Math.max(r.tipRaw||0,0), y2=Y(v);
+    var col=(r.flag==="ok")?"#B4451F":(r.flag==="tight"?"#8A5A0B":"#B4451F");
+    s+='<line x1="'+(x0-14)+'" y1="'+y2+'" x2="'+(x0+3)+'" y2="'+y2+'" stroke="'+col+'" stroke-width="1.4"/>';
+    s+='<polygon points="'+(x0+3)+','+y2+' '+(x0-2)+','+(y2-2.6)+' '+(x0-2)+','+(y2+2.6)+'" fill="'+col+'"/>';
+    var ly=Math.min(y2-3,lastLab-11.5); lastLab=ly;
+    s+='<text x="'+(x0-16)+'" y="'+ly+'" text-anchor="end" font-family="IBM Plex Mono,monospace" font-size="9.5" fill="'+col+'">'+
+        (r.flag==="fall"?"落下":(r.tipRaw<0?r.tipRaw.toFixed(1):r.tipRaw.toFixed(1)))+'</text>';
+  }
+  s+='<text x="18" y="'+(top-10)+'" font-family="IBM Plex Mono,monospace" font-size="9" fill="#8A968F">TIP CLEARANCE / mm</text>';
+  document.getElementById("gauge").innerHTML='<title id="gt">机面からの高さと各ペンの先端クリアランス</title>'+s;
+}
+
+/* ---------- UI ---------- */
+function slider(c){
+  return '<div class="ctl"><div class="lab"><span class="name">'+c.name+
+    '<span class="sym">'+c.sym+'</span></span><span class="val" id="v_'+c.k+'"></span></div>'+
+    '<input type="range" id="s_'+c.k+'" min="'+c.min+'" max="'+c.max+'" step="'+c.step+
+    '" aria-label="'+c.name+'"></div>';
+}
+function buildUI(){
+  var h='';
+  for(var i=0;i<UNIT_CTL.length;i++) h+=slider(UNIT_CTL[i]);
+  document.getElementById("unitCtl").innerHTML=h;
+  UNIT_CTL.forEach(function(c){
+    var el=document.getElementById("s_"+c.k);
+    el.value=P[c.k];
+    el.addEventListener("input",function(){ P[c.k]=parseFloat(el.value); update(); });
+  });
+
+  var seg='';
+  for(var n=2;n<=6;n++) seg+='<button data-n="'+n+'" aria-pressed="'+(n===P.n)+'">'+n+'×'+n+'</button>';
+  var ns=document.getElementById("nSeg"); ns.innerHTML=seg;
+  ns.addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    P.n=parseInt(b.dataset.n,10);
+    [].forEach.call(ns.children,function(x){x.setAttribute("aria-pressed",x===b);});
+    update();
+  });
+
+  var pc=[{k:"pen_d",key:"d",name:"軸径",sym:"Dp",min:4,max:22,step:0.1,unit:"mm"},
+          {k:"pen_nose",key:"nose",name:"鼻先長（先端→軸径）",sym:"Ln",min:2,max:50,step:0.5,unit:"mm"}];
+  var ph='';
+  for(var j=0;j<pc.length;j++) ph+=slider(pc[j]);
+  document.getElementById("penCtl").innerHTML=ph;
+  pc.forEach(function(c){
+    var el=document.getElementById("s_"+c.k);
+    el.value=PEN[c.key];
+    el.addEventListener("input",function(){ PEN[c.key]=parseFloat(el.value); update(); });
+  });
+  window.__pc=pc;
+
+  var ms=document.getElementById("modeSeg");
+  ms.addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    mode=b.dataset.mode;
+    [].forEach.call(ms.children,function(x){x.setAttribute("aria-pressed",x===b);});
+    update();
+  });
+  document.getElementById("cutToggle").addEventListener("change",function(){showCut=this.checked;update();});
+  document.getElementById("tiltToggle").addEventListener("change",function(){showTilt=this.checked;update();});
+}
+
+function fmt(v,n){ return (v>=0?"":"−")+Math.abs(v).toFixed(n===undefined?2:n); }
+function row(k,v){ return "<dt>"+k+"</dt><dd>"+v+"</dd>"; }
+
+function update(){
+  var g=derive();
+  UNIT_CTL.forEach(function(c){
+    var v=P[c.k], shown=v;
+    if(c.k==="cut") shown=g.cut;
+    if(c.k==="rTip") shown=g.rTip;
+    document.getElementById("v_"+c.k).textContent=shown.toFixed(c.step<0.1?2:1)+c.unit;
+  });
+  window.__pc.forEach(function(c){
+    document.getElementById("v_"+c.k).textContent=PEN[c.key].toFixed(1)+c.unit;
+  });
+
+  var results={ preset:PRESETS.map(function(pn){return solve(pn,g);}), custom:solve(PEN,g) };
+
+  var pMax=P.p*Math.SQRT2-2*g.rTan;
+  var foot=(P.n-1)*P.p+P.D;
+  document.getElementById("outUnit").innerHTML=
+    row("スロート径 <code>p√2−D</code>","<b>"+fmt(g.dThroat)+"</b> mm")+
+    row("辺の隙間 <code>p−D</code>",fmt(g.sideGap)+" mm")+
+    row("ポケット数 <code>(n−1)²</code>","<b>"+Math.pow(P.n-1,2)+"</b>")+
+    row("対応軸径",fmt(Math.max(g.dThroat,0),1)+" – "+fmt(pMax,1)+" mm")+
+    row("全高",fmt(g.tipTop,1)+" mm")+
+    row("フットプリント",fmt(foot,1)+" mm 角");
+
+  var w=[];
+  if(g.dThroat<=0) w.push("スロートが閉じています。ピッチを広げるか胴部径を絞ってください。");
+  else if(g.dThroat<3) w.push("スロート径が細く、ほとんどのペンが入りません。");
+  if(g.sideGap>0) w.push("辺の隙間が正なので、ユニットが互いに離れています。溶着せず別体になります。");
+  if(g.cut<P.cut) w.push("切り落としが半径を超えるため c="+g.cut.toFixed(1)+" に制限しました。");
+  if(g.rTip<P.rTip-0.001) w.push("先端Rが円錐に接しないため rt="+g.rTip.toFixed(2)+" に制限しました。");
+  if(g.tipTop>180) w.push("全高 "+g.tipTop.toFixed(0)+"mm。A1 Mini（180mm）を超えます。");
+  if(Math.max(foot,foot)>180) w.push("フットプリントが A1 Mini のベッドを超えます。");
+  document.getElementById("warnUnit").innerHTML=w.join("<br>");
+
+  var cr=results.custom, cf=FLAG[cr.flag];
+  document.getElementById("outPen").innerHTML=
+    row("着座高さ",(cr.flag==="fall"?"—":fmt(cr.contact,1)+" mm"))+
+    row("先端クリアランス","<b>"+(cr.flag==="fall"?"—":fmt(cr.tipRaw,1))+"</b> mm")+
+    row("傾き許容",(cr.flag==="fall"?"—":"±"+fmt(cr.tilt,1)+"°"))+
+    row("判定",'<span class="tag '+cf[1]+'">'+cf[0]+"</span>");
+
+  var tb='';
+  for(var i=0;i<PRESETS.length;i++){
+    var pn=PRESETS[i], r=results.preset[i], f=FLAG[r.flag];
+    tb+='<tr><td>'+pn.name+'</td><td class="num">'+pn.d.toFixed(1)+'</td><td class="num">'+pn.nose.toFixed(0)+
+        '</td><td class="num">'+(r.flag==="fall"?"—":fmt(r.contact,1))+
+        '</td><td class="num">'+(r.flag==="fall"?"—":fmt(r.tipRaw,1))+
+        '</td><td class="num">'+(r.flag==="fall"?"—":"±"+fmt(r.tilt,1))+
+        '</td><td><span class="tag '+f[1]+'">'+f[0]+'</span></td></tr>';
+  }
+  var cf2=FLAG[cr.flag];
+  tb+='<tr class="me"><td>カスタム</td><td class="num">'+PEN.d.toFixed(1)+'</td><td class="num">'+PEN.nose.toFixed(0)+
+      '</td><td class="num">'+(cr.flag==="fall"?"—":fmt(cr.contact,1))+
+      '</td><td class="num">'+(cr.flag==="fall"?"—":fmt(cr.tipRaw,1))+
+      '</td><td class="num">'+(cr.flag==="fall"?"—":"±"+fmt(cr.tilt,1))+
+      '</td><td><span class="tag '+cf2[1]+'">'+cf2[0]+'</span></td></tr>';
+  document.getElementById("tbody").innerHTML=tb;
+
+  document.getElementById("hint").textContent = mode==="custom"?"カスタム1本を全ポケットに配置":"プリセットを順に配置";
+
+  drawGauge(g,results);
+  rebuild3d(g,results);
+}
+
+buildUI(); init3d(); update();
+})();
+</script>
+</html>

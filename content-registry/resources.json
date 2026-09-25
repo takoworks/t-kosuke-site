@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "baseUrl": "https://t-kosuke.com/r/",
+  "resources": {
+    "QWkcoWb525EZ": {
+      "type": "html",
+      "title": "水滴ユニット型ペンドック — パラメトリック検討",
+      "sourceName": "pen_dock_parametric_study.html",
+      "target": "public/works/fbd65f9296a71fb0ae477655be008047/index.html",
+      "url": "https://t-kosuke.com/r/QWkcoWb525EZ/",
+      "created": "2026-09-26",
+      "status": "published"
+    },
+    "XAPahVzJj3P4": {
+      "type": "image",
+      "title": "ZINE連携画像",
+      "sourceName": "IMG_3942.JPG",
+      "target": "public/media/4cb4d5feba1ea1de0d1c3413683427b3.jpg",
+      "url": "https://t-kosuke.com/r/XAPahVzJj3P4/",
+      "created": "2026-09-26",
+      "status": "published"
+    }
+  }
+}
