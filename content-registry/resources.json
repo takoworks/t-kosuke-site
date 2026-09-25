@@ -299,6 +299,30 @@
       "url": "https://t-kosuke.com/r/nXaP9tr5quVo/",
       "created": "2026-09-26",
       "status": "published"
+    },
+    "c4zLeSVgXawP": {
+      "type": "image",
+      "title": "ZINE連携画像",
+      "sourceName": "IMG_3551.jpg",
+      "sourceSha256": "146f9cb02a7da6307475e33413e1ae4b92c1ce3436630bd261c8b8e21dc26251",
+      "target": "public/media/bdec160b57df809095d56915a149104f.webp",
+      "variants": [
+        {
+          "width": 960,
+          "height": 1280,
+          "format": "webp",
+          "file": "public/media/33a110a3fc7803da66a85e6f4e2b67c2.webp"
+        },
+        {
+          "width": 1600,
+          "height": 2133,
+          "format": "webp",
+          "file": "public/media/bdec160b57df809095d56915a149104f.webp"
+        }
+      ],
+      "url": "https://t-kosuke.com/r/c4zLeSVgXawP/",
+      "created": "2026-09-26",
+      "status": "published"
     }
   }
 }
