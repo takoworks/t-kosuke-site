@@ -85,11 +85,24 @@ def catalog_html(registry: dict) -> str:
         qr_base = f"{public_id}-{resource_type}"
         escaped_title = html.escape(title, quote=True)
         escaped_url = html.escape(url, quote=True)
+        variants = resource.get("variants", [])
+        if resource_type == "image" and variants:
+            thumbnail_path = html.escape(str(variants[0]["file"]), quote=True)
+            preview = f'''<a class="thumbnail-link" href="{escaped_url}" target="_blank" rel="noopener noreferrer">
+          <img class="thumbnail" src="{thumbnail_path}" alt="{escaped_title}のサムネイル" loading="lazy">
+        </a>'''
+        else:
+            preview = f'''<div class="thumbnail-placeholder" aria-label="{html.escape(type_label)}コンテンツ">
+          <span>{html.escape(type_label)}</span>
+        </div>'''
         cards.append(
             f'''    <article class="card" data-title="{escaped_title}" data-id="{public_id}" data-type="{resource_type}" data-created="{created}">
-      <a class="qr-link" href="qr-codes/{qr_base}.png" target="_blank">
-        <img class="qr" src="qr-codes/{qr_base}.png" alt="{escaped_title}のQRコード" loading="lazy">
-      </a>
+      <div class="previews">
+        <a class="qr-link" href="qr-codes/{qr_base}.png" target="_blank">
+          <img class="qr" src="qr-codes/{qr_base}.png" alt="{escaped_title}のQRコード" loading="lazy">
+        </a>
+        {preview}
+      </div>
       <div class="content">
         <div class="meta"><span>{html.escape(type_label)}</span><time datetime="{created}">{created}</time></div>
         <h2>{escaped_title}</h2>
@@ -98,7 +111,8 @@ def catalog_html(registry: dict) -> str:
         <div class="actions">
           <a class="primary" href="{escaped_url}" target="_blank" rel="noopener noreferrer">公開ページを開く</a>
           <button type="button" data-copy="{escaped_url}">URLをコピー</button>
-          <a href="qr-codes/{qr_base}.png" target="_blank">PNG</a>
+          <a href="qr-codes/{qr_base}.png" target="_blank">標準PNG</a>
+          <a href="qr-codes/{qr_base}-small.png" target="_blank">小型PNG</a>
           <a href="qr-codes/{qr_base}.svg" target="_blank">SVG</a>
         </div>
       </div>
@@ -169,21 +183,28 @@ def catalog_html(registry: dict) -> str:
       margin: 0 auto 48px;
       padding: 0 20px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
       gap: 16px;
     }}
     .card {{
-      display: grid;
-      grid-template-columns: 148px minmax(0, 1fr);
-      gap: 16px;
       padding: 16px;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: 10px;
     }}
     .card[hidden] {{ display: none; }}
-    .qr-link {{ align-self: start; }}
+    .previews {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }}
+    .qr-link, .thumbnail-link, .thumbnail-placeholder {{
+      display: block;
+      overflow: hidden;
+      aspect-ratio: 1;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+    }}
     .qr {{ display: block; width: 100%; height: auto; aspect-ratio: 1; }}
+    .thumbnail {{ display: block; width: 100%; height: 100%; object-fit: cover; }}
+    .thumbnail-placeholder {{ display: grid; place-items: center; color: var(--subtle); background: #eef1ef; font-weight: 600; }}
     .content {{ min-width: 0; }}
     .meta {{ display: flex; justify-content: space-between; gap: 12px; color: var(--subtle); font-size: 12px; }}
     h2 {{ margin: 8px 0 3px; font-size: 17px; line-height: 1.35; }}
@@ -206,11 +227,6 @@ def catalog_html(registry: dict) -> str:
     .empty {{ display: none; max-width: 1180px; margin: 30px auto; padding: 0 20px; color: var(--subtle); }}
     @media (max-width: 720px) {{
       .controls {{ grid-template-columns: 1fr; }}
-      .card {{ grid-template-columns: 112px minmax(0, 1fr); }}
-    }}
-    @media (max-width: 440px) {{
-      .card {{ grid-template-columns: 1fr; }}
-      .qr-link {{ width: min(240px, 100%); justify-self: center; }}
     }}
   </style>
 </head>
@@ -523,20 +539,53 @@ def viewer_html(title: str, variants: list[dict]) -> str:
 '''
 
 
-def create_qr(url: str, png_path: Path, svg_path: Path) -> None:
-    png_path.parent.mkdir(parents=True, exist_ok=True)
+def make_qr(url: str, box_size: int) -> qrcode.QRCode:
     qr = qrcode.QRCode(
         error_correction=ERROR_CORRECT_H,
-        box_size=20,
+        box_size=box_size,
         border=4,
     )
     qr.add_data(url)
     qr.make(fit=True)
+    return qr
+
+
+def verify_qr(path: Path, expected_url: str) -> None:
+    decoded = zxingcpp.read_barcode(Image.open(path))
+    if decoded is None or decoded.text != expected_url:
+        raise RegistrationError(f"生成したQRコードの読取検証に失敗しました: {path.name}")
+
+
+def create_qr(
+    url: str,
+    png_path: Path,
+    small_png_path: Path,
+    svg_path: Path,
+) -> None:
+    png_path.parent.mkdir(parents=True, exist_ok=True)
+    qr = make_qr(url, box_size=20)
     qr.make_image(fill_color="black", back_color="white").save(png_path)
     qr.make_image(image_factory=SvgPathImage).save(svg_path)
-    decoded = zxingcpp.read_barcode(Image.open(png_path))
-    if decoded is None or decoded.text != url:
-        raise RegistrationError("生成したQRコードの読取検証に失敗しました。")
+    small_qr = make_qr(url, box_size=6)
+    small_qr.make_image(fill_color="black", back_color="white").save(small_png_path)
+    verify_qr(png_path, url)
+    verify_qr(small_png_path, url)
+
+
+def ensure_small_qr_codes(registry: dict) -> list[Path]:
+    QR_DIR.mkdir(parents=True, exist_ok=True)
+    created: list[Path] = []
+    for public_id, resource in registry.get("resources", {}).items():
+        resource_type = str(resource.get("type", "other"))
+        destination = QR_DIR / f"{public_id}-{resource_type}-small.png"
+        if destination.exists():
+            verify_qr(destination, str(resource["url"]))
+            continue
+        small_qr = make_qr(str(resource["url"]), box_size=6)
+        small_qr.make_image(fill_color="black", back_color="white").save(destination)
+        verify_qr(destination, str(resource["url"]))
+        created.append(destination)
+    return created
 
 
 def stage_resource(
@@ -559,8 +608,14 @@ def stage_resource(
     )
 
     qr_png_name = f"{public_id}-image.png"
+    qr_small_png_name = f"{public_id}-image-small.png"
     qr_svg_name = f"{public_id}-image.svg"
-    create_qr(route_url, qr_stage / qr_png_name, qr_stage / qr_svg_name)
+    create_qr(
+        route_url,
+        qr_stage / qr_png_name,
+        qr_stage / qr_small_png_name,
+        qr_stage / qr_svg_name,
+    )
 
     stored_variants = [
         {
@@ -587,6 +642,7 @@ def stage_resource(
     ] + [
         Path("public") / "r" / public_id / "index.html",
         Path("qr-codes") / qr_png_name,
+        Path("qr-codes") / qr_small_png_name,
         Path("qr-codes") / qr_svg_name,
     ]
     return public_id, resource, generated
@@ -762,6 +818,8 @@ def self_test() -> int:
         assert "発行済みQRコード一覧" in catalog
         assert resource["url"] in catalog
         assert f"qr-codes/{public_id}-image.png" in catalog
+        assert f"qr-codes/{public_id}-image-small.png" in catalog
+        assert resource["variants"][0]["file"] in catalog
     print("Self-test passed")
     return 0
 
@@ -777,7 +835,10 @@ def main() -> int:
     if arguments.self_test:
         return self_test()
     if arguments.build_catalog:
-        write_catalog(load_registry())
+        registry = load_registry()
+        created = ensure_small_qr_codes(registry)
+        write_catalog(registry)
+        print(f"Small QR codes created: {len(created)}")
         print(f"Catalog updated: {CATALOG_PATH}")
         return 0
     try:
