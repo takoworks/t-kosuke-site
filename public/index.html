@@ -44,12 +44,30 @@
     }
 
     .links a {
-      color: #0066cc;
+      display: inline-block;
+      box-sizing: border-box;
+      padding: 10px 16px;
+      border: 2px solid #111111;
+      border-radius: 8px;
+      color: #111111;
+      font-weight: 700;
       text-decoration: none;
     }
 
     .links a:hover {
-      text-decoration: underline;
+      background-color: #f4f4f4;
+    }
+
+    .links a:focus-visible {
+      outline: 3px solid #0066cc;
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 600px) {
+      .links a {
+        display: block;
+        text-align: center;
+      }
     }
   </style>
 </head>
@@ -59,12 +77,9 @@
     <h1>T.Kosukeのページ</h1>
 <!-- 各種リンク -->
     <div class="links">
-      <p>
-        X:
-        <a href="https://x.com/takowork" target="_blank" rel="noopener noreferrer">
-          @takowork
-        </a>
-      </p>
+      <a href="https://x.com/takowork" target="_blank" rel="noopener noreferrer">
+        Xで近況を見る（@takowork）
+      </a>
     </div>
 <!-- 更新履歴 -->
     <p>2026/09/26 ZINEフェス東京に参加しました。</p>
